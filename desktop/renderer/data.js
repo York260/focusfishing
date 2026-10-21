@@ -10,9 +10,11 @@
   };
 
   const STYLE_PROMPT =
-    'original creature design for a monster-collecting RPG, single creature, full body, three-quarter view, ' +
-    'dynamic heroic pose, clean cel-shaded anime illustration, bold confident lineart, vibrant but limited color palette, ' +
-    'strong readable silhouette, soft rim light, pure white background, no text, no watermark, no logo';
+    'original creature design for a monster-collecting game, official character art in the style of 1990s handheld RPG concept sheets, ' +
+    'single creature, full body, three-quarter view, chibi proportions with a big head and small round body, simple bold shapes, ' +
+    'flat cel colors with only 3-4 colors and one shadow tone, uniform thick dark outline with slight hand-drawn wobble, minimal details, ' +
+    'simple dot eyes with a small white shine highlight, no gradients, no glossy highlights, no glow, no rim light, no soft airbrush shading, ' +
+    'no texture, plain white background, no text';
 
   // ctx 欄位：startHour, dur, weekend, bond, lv, failCount, recovered, sootheTotal, streak, dexBase, pureCount, appsUsed
   const LINES = [
