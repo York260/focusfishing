@@ -1,0 +1,54 @@
+name: Build Windows (FocusBeasts)
+
+on:
+  push:
+    branches: [main]
+    paths: ['desktop/**', '.github/workflows/build-desktop.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build installer and portable exe
+        run: npm run dist
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Read version
+        id: ver
+        shell: bash
+        run: echo "v=desktop-v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FocusBeasts-windows
+          path: desktop/dist/*.exe
+
+      - name: Publish to Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.v }}
+          name: 專注異獸錄（Windows）${{ steps.ver.outputs.v }}
+          target_commitish: ${{ github.sha }}
+          files: desktop/dist/*.exe
+          body: |
+            下載 FocusBeasts-Setup 安裝檔（或免安裝的 Portable 版）。
+            第一次執行若出現 Windows SmartScreen，按「其他資訊」→「仍要執行」。

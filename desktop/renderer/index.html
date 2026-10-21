@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' file: data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; script-src 'self'">
+<title>專注異獸錄</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="shell">
+  <nav class="side" id="nav">
+    <div class="logo"><span class="zh">專注異獸錄</span><span class="en">FOCUS BEASTS</span></div>
+    <button data-view="home" class="on">據點</button>
+    <button data-view="focus">專注</button>
+    <button data-view="team">隊伍</button>
+    <button data-view="dex">圖鑑</button>
+    <button data-view="studio">美術工作室</button>
+    <button data-view="settings">工作模式設定</button>
+    <div class="side-foot" id="sideFoot"></div>
+  </nav>
+  <main class="main" id="main"></main>
+</div>
+<div class="modal" id="modal" hidden><div class="modal-box" id="modalBox"></div></div>
+<div class="toast" id="toast" hidden></div>
+<script src="data.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

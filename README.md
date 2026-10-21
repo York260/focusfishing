@@ -26,3 +26,21 @@ cd android && ./gradlew assembleRelease
 ```
 
 `android/app/focusfishing.keystore` 是本專案的固定簽章，讓每次更新都能直接覆蓋安裝；repo 請維持私人。
+
+---
+
+# 專注異獸錄 FocusBeasts（Windows 電腦版）
+
+位於 `desktop/`。用專注捕捉、培養、進化異獸，並有工作模式：只有白名單程式和網站不算分心。
+
+- **修練**：夥伴獲得經驗與羈絆；分心會讓收穫打折，滿 5 分鐘失敗。
+- **探索**：捕捉新的異獸，專注越久越容易遇到稀有種。
+- **進化試煉**：夥伴 Lv 10 解鎖。離開白名單超過 5 秒即失敗，夥伴進入「失衡」，要累積 60 分鐘安撫才能再挑戰。
+- **進化路線**：每條線都有普通、特殊、隱藏三種，符合條件時隱藏 > 特殊 > 普通。
+- **美術工作室**：複製 AI 生圖提示詞，把 PNG 拖進去就會換上（提示詞也整理在 `desktop/PROMPTS.md`）。
+
+推送 `desktop/` 的變更到 `main` 會自動打包，依 `desktop/package.json` 的 version 發佈為 `desktop-vX.Y.Z`。
+
+```bash
+cd desktop && npm ci && npm start
+```

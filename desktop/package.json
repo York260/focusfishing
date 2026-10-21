@@ -1,0 +1,33 @@
+{
+  "name": "focusbeasts",
+  "productName": "FocusBeasts",
+  "version": "0.1.0",
+  "description": "專注異獸錄：用專注捕捉、培養、進化異獸的 Windows 工作模式 App",
+  "main": "main.js",
+  "author": "York260",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.york260.focusbeasts",
+    "productName": "FocusBeasts",
+    "copyright": "York260",
+    "files": ["main.js", "preload.js", "renderer/**/*", "build/icon.png"],
+    "directories": { "output": "dist", "buildResources": "build" },
+    "win": { "icon": "build/icon.ico", "target": ["nsis", "portable"] },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "專注異獸錄",
+      "artifactName": "FocusBeasts-Setup-${version}.${ext}"
+    },
+    "portable": { "artifactName": "FocusBeasts-Portable-${version}.${ext}" }
+  }
+}
