@@ -17,7 +17,7 @@
 - 螢幕偵測（前景服務）：`android/app/src/main/java/com/york260/focusfishing/FocusService.java`
 - JS 介面：`FocusGuardPlugin.java`（`window.Capacitor.Plugins.FocusGuard`）
 
-推送到 `main` 會自動打包 APK（Actions → Artifacts）；推送 `v*` 標籤（例如 `v0.1.0`）會發佈到 Releases。
+推送到 `main` 會自動打包 APK（Actions → Artifacts）；並依 `android/app/build.gradle` 的 versionName 發佈到 Releases（改版時記得調高 versionCode 和 versionName）。
 
 ```bash
 npm ci

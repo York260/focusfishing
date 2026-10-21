@@ -3,7 +3,6 @@ name: Build APK
 on:
   push:
     branches: [main]
-    tags: ['v*']
   workflow_dispatch:
 
 permissions:
@@ -43,9 +42,15 @@ jobs:
           name: FocusFishing-apk
           path: FocusFishing.apk
 
-      - name: Publish to Releases (on version tag)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Read version
+        id: ver
+        run: echo "v=v$(grep -oP 'versionName "\K[^"]+' android/app/build.gradle)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to Releases
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.ver.outputs.v }}
+          name: 專注獨釣 ${{ steps.ver.outputs.v }}
+          target_commitish: ${{ github.sha }}
           files: FocusFishing.apk
-          generate_release_notes: true
+          body: 下載 FocusFishing.apk 到手機安裝即可。更新版本時直接覆蓋安裝，圖鑑不會消失。
