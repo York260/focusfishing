@@ -6,8 +6,8 @@ const API = window.beast || null;           // Electron 提供；在一般瀏覽
 const LIMIT = 5 * 60 * 1000;                // 一般專注：分心累計上限
 const STRICT_GRACE = 5000;                  // 試煉：離開白名單超過 5 秒即失敗
 const SOOTHE_NEED = 60;                     // 失衡後需要累積的安撫分鐘
-const EVO_LV = 10, MAX_LV = 30;
-const ROUTE_ZH = { base: '基礎型', normal: '普通進化', special: '特殊進化', hidden: '隱藏進化' };
+const EVO_LV = 10, EVO2_LV = 25, MAX_LV = 30;
+const ROUTE_ZH = { base: '基礎型', normal: '普通進化', special: '特殊進化', hidden: '隱藏進化', normal2: '普通・二階', special2: '特殊・二階', hidden2: '隱藏・二階' };
 const BROWSERS = ['chrome', 'msedge', 'firefox', 'brave', 'opera', 'vivaldi', 'arc'];
 const SYSTEM_OK = ['lockapp', 'logonui', 'shellexperiencehost', 'startmenuexperiencehost', 'searchhost', 'searchapp', 'shellhost', ''];
 
@@ -55,7 +55,8 @@ function addExp(b, amt) {
   if (b.lv >= MAX_LV) b.exp = Math.min(b.exp, need(b.lv));
   return up;
 }
-const canEvolve = b => b && formOf(b).route === 'base' && b.lv >= EVO_LV && b.status === 'ok';
+const canEvolve = b => { if (!b || b.status !== 'ok') return false; const f = formOf(b); return (f.stage === 0 && b.lv >= EVO_LV) || (f.stage === 1 && b.lv >= EVO2_LV); };
+const nextLv = b => formOf(b).stage === 0 ? EVO_LV : EVO2_LV;
 function streak() {
   let n = 0; const d = new Date();
   if (!S.days[dayKey(d)]) d.setDate(d.getDate() - 1);
@@ -163,9 +164,9 @@ function vHome(m) {
         ${unstable ? `<button class="act hot" data-k="soothe"><b>安撫</b><span>累積 ${SOOTHE_NEED} 分鐘、分心不超過 20% 的專注，讓夥伴恢復</span></button>` :
           `<button class="act" data-k="train"><b>修練</b><span>專注讓夥伴獲得大量經驗與羈絆</span></button>`}
         <button class="act" data-k="explore"><b>探索</b><span>到荒野尋找新的異獸，夥伴也會成長</span></button>
-        ${evo ? `<button class="act hot" data-k="trial"><b>進化試煉</b><span>全程不得離開白名單，打斷即失敗</span></button>` :
-          f.route === 'base' ? `<button class="act" disabled><b>進化試煉</b><span>${unstable ? '失衡中無法挑戰' : '夥伴 Lv ' + EVO_LV + ' 解鎖'}</span></button>` :
-          `<button class="act" disabled><b>已完成進化</b><span>第三階段進化將在之後的版本開放</span></button>`}
+        ${evo ? `<button class="act hot" data-k="trial"><b>${f.stage === 0 ? '進化試煉' : '二階進化試煉'}</b><span>全程不得離開白名單，打斷即失敗${f.stage === 1 ? '・90 分鐘起' : ''}</span></button>` :
+          f.stage < 2 ? `<button class="act" disabled><b>${f.stage === 0 ? '進化試煉' : '二階進化試煉'}</b><span>${unstable ? '失衡中無法挑戰' : '夥伴 Lv ' + nextLv(b) + ' 解鎖' + (f.stage === 1 ? '，試煉需 90 分鐘以上' : '')}</span></button>` :
+          `<button class="act" disabled><b>已達最終形態</b><span>${esc(f.name)} 已經完成兩階進化</span></button>`}
         <button class="act" data-go="team"><b>隊伍</b><span>${S.beasts.length} 隻異獸・更換夥伴</span></button>
       </div>
     </div>
@@ -189,14 +190,14 @@ function starter() {
 
 /* ---------- 專注設定 ---------- */
 const DURS = { train: [15, 25, 45, 60], explore: [15, 25, 45, 60], soothe: [15, 25, 45, 60], trial: [45, 60, 90, 120] };
-const defaultDur = k => k === 'trial' ? 45 : 25;
+const defaultDur = k => k === 'trial' ? (partner() && formOf(partner()).stage === 1 ? 90 : 45) : 25;
 function vFocus(m) {
   const b = partner(); if (!b) return go('home');
   const unstable = b.status === 'unstable';
   if (unstable && (focusKind === 'train' || focusKind === 'trial')) focusKind = 'soothe';
   if (!unstable && focusKind === 'soothe') focusKind = 'train';
   if (focusKind === 'trial' && !canEvolve(b)) focusKind = 'train';
-  const durs = DURS[focusKind].slice(); if (S.test && focusKind !== 'trial') durs.unshift(1); if (S.test && focusKind === 'trial') durs.unshift(2);
+  let durs = DURS[focusKind].slice(); if (focusKind === 'trial' && formOf(b).stage === 1) durs = [90, 120, 150]; if (S.test && focusKind !== 'trial') durs.unshift(1); if (S.test && focusKind === 'trial') durs.unshift(2);
   if (!durs.includes(focusDur)) focusDur = durs.includes(defaultDur(focusKind)) ? defaultDur(focusKind) : durs[0];
   const kinds = [
     ['train', '修練', '夥伴經驗 ×1.5、羈絆提升', unstable],
@@ -221,7 +222,12 @@ function vFocus(m) {
   $('#go').onclick = () => startSession(focusKind, focusDur);
 }
 function trialPreview(b) {
-  const L = lineOf(b), hdKnown = S.dex[L.hidden.id];
+  const L = lineOf(b), f = formOf(b);
+  if (f.stage === 1) {
+    const g = FORMS[f.next];
+    return `<div class="grid" style="gap:8px"><span class="eyebrow">二階進化（沿著目前的路線）</span><div class="routes"><div class="route"><div style="--tc:${TYPES[g.type].color}">${art(g.id, { known: !!S.dex[g.id] })}</div><div><div class="rk">${ROUTE_ZH[g.route]}</div><b>${S.dex[g.id] ? esc(g.name) : '？？？'}</b><p>${esc(f.name)} 的下一個樣子。Lv ${EVO2_LV} 以上，通過 90 分鐘以上的試煉。</p></div></div></div></div>`;
+  }
+  const hdKnown = S.dex[L.hidden.id];
   const row = (k, f, cond) => `<div class="route"><div style="--tc:${TYPES[f.type].color}">${art(f.id, { known: !!S.dex[f.id] || k === 'normal' })}</div><div><div class="rk">${ROUTE_ZH[k]}</div><b>${k === 'hidden' && !hdKnown ? '？？？' : esc(f.name)}</b><p>${cond}</p></div></div>`;
   return `<div class="grid" style="gap:8px"><span class="eyebrow">可能的進化路線（隱藏 &gt; 特殊 &gt; 普通，符合條件者優先）</span><div class="routes">
     ${row('normal', L.normal, '通過試煉即可')}
@@ -345,10 +351,11 @@ function complete() {
     const L = lineOf(b);
     const ctx = { startHour: s.startHour, dur: s.dur, weekend: s.weekend, bond: b.bond, lv: b.lv, failCount: b.failCount, sootheTotal: b.sootheTotal,
                   streak: streak(), dexBase: dexBase(), pureCount: b.pureCount, appsUsed: s.apps.length };
-    const route = L.hd.test(ctx) ? 'hidden' : L.sp.test(ctx) ? 'special' : 'normal';
-    const before = formOf(b).name; b.form = L[route].id; S.dex[b.form] = true; b.bond += 5;
-    const f = formOf(b); title = route === 'hidden' ? '隱藏進化！' : route === 'special' ? '特殊進化！' : '進化成功！';
-    html = `<div style="max-width:300px;align-self:center;width:100%">${art(f.id, { cls: 'evo' })}</div><h2 style="text-align:center">${esc(before)} 進化成了 ${esc(f.name)}</h2><p class="lead" style="margin:0;text-align:center">${esc(f.desc)}</p>${route !== 'normal' ? `<p style="margin:0;text-align:center;color:var(--accent)">觸發條件：${esc(route === 'hidden' ? L.hd.label : L.sp.label)}</p>` : ''}`;
+    const cur = formOf(b);
+    const route = cur.stage === 1 ? cur.route + '2' : L.hd.test(ctx) ? 'hidden' : L.sp.test(ctx) ? 'special' : 'normal';
+    const before = cur.name; b.form = L[route].id; S.dex[b.form] = true; b.bond += 5;
+    const f = formOf(b); title = cur.stage === 1 ? '二階進化！' : route === 'hidden' ? '隱藏進化！' : route === 'special' ? '特殊進化！' : '進化成功！';
+    html = `<div style="max-width:300px;align-self:center;width:100%">${art(f.id, { cls: 'evo' })}</div><h2 style="text-align:center">${esc(before)} 進化成了 ${esc(f.name)}</h2><p class="lead" style="margin:0;text-align:center">${esc(f.desc)}</p>${route === 'hidden' || route === 'special' ? `<p style="margin:0;text-align:center;color:var(--accent)">觸發條件：${esc(route === 'hidden' ? L.hd.label : L.sp.label)}</p>` : ''}`;
   }
   save(); notify(title, '回到專注異獸錄查看結果。');
   modal(`<div class="eyebrow">結果・${min} 分鐘</div><h1>${title}</h1>${html}${logSummary(s)}<div class="row"><button class="btn primary" id="ok">回到據點</button></div>`);
@@ -371,12 +378,13 @@ function vTeam(m) {
 function detail(b) {
   const f = formOf(b), L = lineOf(b), c = TYPES[f.type].color;
   const route = (k, cond) => { const g = L[k], known = !!S.dex[g.id], here = b.form === g.id;
-    return `<div class="route" style="${here ? 'box-shadow:inset 0 0 0 1px var(--accent)' : ''}"><div style="--tc:${c}">${art(g.id, { known: known || k === 'base' })}</div><div><div class="rk">${ROUTE_ZH[k]}${here ? '・目前' : ''}</div><b>${known || k !== 'hidden' ? esc(g.name) : '？？？'}</b><p>${cond}</p></div></div>`; };
+    return `<div class="route" style="${here ? 'box-shadow:inset 0 0 0 1px var(--accent)' : ''}"><div style="--tc:${c}">${art(g.id, { known: known || k === 'base' })}</div><div><div class="rk">${ROUTE_ZH[k]}${here ? '・目前' : ''}</div><b>${known || (k !== 'hidden' && k !== 'hidden2') ? esc(g.name) : '？？？'}</b><p>${cond}</p></div></div>`; };
   return `<div class="card detail" style="--tc:${c}"><div>${art(f.id)}</div><div class="grid" style="gap:10px;align-content:start">
     <div class="row"><h2 style="font-size:24px">${esc(f.name)}</h2><span class="chip type" style="--tc:${c}">${f.type}屬性</span>${b.status === 'unstable' ? `<span class="chip bad">失衡・安撫 ${Math.floor(b.soothe)}/${SOOTHE_NEED}</span>` : ''}</div>
     <p style="margin:0;color:var(--muted)">${esc(f.desc)}</p>
     <div class="stats"><div class="stat"><div class="k">等級</div><div class="v">${b.lv}</div></div><div class="stat"><div class="k">羈絆</div><div class="v">${b.bond}</div></div><div class="stat"><div class="k">零分心</div><div class="v">${b.pureCount}</div></div></div>
-    <div class="routes">${route('base', '起點')}${route('normal', `Lv ${EVO_LV} 後通過進化試煉`)}${route('special', L.sp.label)}${route('hidden', S.dex[L.hidden.id] ? L.hd.label : L.hd.hint)}</div>
+    <div class="routes">${route('base', '起點')}${route('normal', `Lv ${EVO_LV} 後通過進化試煉`)}${route('special', L.sp.label)}${route('hidden', S.dex[L.hidden.id] ? L.hd.label : L.hd.hint)}
+      ${['normal2', 'special2', 'hidden2'].map(k => route(k, `由${L[k.slice(0, -1)].name}在 Lv ${EVO2_LV} 後通過 90 分鐘以上的試煉`)).join('')}</div>
     ${b.uid === S.partner ? '<span class="chip ok" style="align-self:flex-start">目前的夥伴</span>' : '<button class="btn primary" id="setP" style="align-self:flex-start">設為夥伴</button>'}
   </div></div>`;
 }
@@ -386,7 +394,7 @@ function vDex(m) {
   const n = Object.keys(S.dex).filter(k => FORMS[k]).length;
   m.innerHTML = `<div class="eyebrow">圖鑑</div><h1>${n} / ${Object.keys(FORMS).length}</h1><p class="lead">黑影是還沒見過的形態。隱藏進化的條件，只有親眼見過才會揭曉。</p>
   <div class="grid" style="gap:22px">${LINES.map(L => `<div class="grid" style="gap:8px"><div class="row"><h2>${L.base.name}系</h2><span class="chip type" style="--tc:${TYPES[L.type].color}">${L.type}</span></div>
-    <div class="dexline">${['base', 'normal', 'special', 'hidden'].map(k => { const f = L[k], kn = !!S.dex[f.id]; return `<div class="dexcell" style="--tc:${TYPES[f.type].color}">${art(f.id, { known: kn })}<div>${kn ? esc(f.name) : '？？？'}</div><div class="r">${ROUTE_ZH[k]}</div></div>`; }).join('')}</div></div>`).join('')}</div>`;
+    <div class="dexline">${['base', 'normal', 'special', 'hidden', null, 'normal2', 'special2', 'hidden2'].map(k => { if (!k) return '<div></div>'; const f = L[k], kn = !!S.dex[f.id]; return `<div class="dexcell" style="--tc:${TYPES[f.type].color}">${art(f.id, { known: kn })}<div>${kn ? esc(f.name) : '？？？'}</div><div class="r">${ROUTE_ZH[k]}</div></div>`; }).join('')}</div></div>`).join('')}</div>`;
 }
 
 /* ---------- 美術工作室 ---------- */
