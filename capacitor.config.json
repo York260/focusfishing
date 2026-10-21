@@ -1,0 +1,6 @@
+{
+  "appId": "com.york260.focusfishing",
+  "appName": "專注獨釣",
+  "webDir": "www",
+  "android": { "backgroundColor": "#E6ECE9" }
+}

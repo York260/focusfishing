@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>專注獨釣</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&display=swap">
+<style>
+/* Layout: one quiet column, the lake scene on top, a single paper panel below that changes with each stage of the trip */
+:root{
+  --bg:#E6ECE9; --surface:#F3F6F4; --fg:#24322E; --muted:#61716C; --line:#C8D3CE;
+  --accent:#A87D35; --accent-ink:#FFFDF7; --deep:#2E4844; --warn:#A9534A; --night:#0D1414; --night-fg:#7F8F8B;
+  --r-common:#768A84; --r-uncommon:#3F7F78; --r-rare:#566CA6; --r-legend:#A87D35; --r-surprise:#9C6688;
+  --scene-dim:1;
+  --f-display:"LXGW WenKai TC","Kaiti TC","STKaiti","BiauKai",serif;
+  --f-body:"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101918; --surface:#172322; --fg:#DCE5E1; --muted:#94A49F; --line:#2B3B38;
+  --accent:#D7B26C; --accent-ink:#1B1810; --deep:#BCD5CE; --warn:#E28B7E; --night:#050808; --night-fg:#5F6E6A;
+  --r-common:#9AADA7; --r-uncommon:#73B5AC; --r-rare:#94A6DA; --r-legend:#D7B26C; --r-surprise:#CF98BA;
+  --scene-dim:.84; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#101918; --surface:#172322; --fg:#DCE5E1; --muted:#94A49F; --line:#2B3B38;
+  --accent:#D7B26C; --accent-ink:#1B1810; --deep:#BCD5CE; --warn:#E28B7E; --night:#050808; --night-fg:#5F6E6A;
+  --r-common:#9AADA7; --r-uncommon:#73B5AC; --r-rare:#94A6DA; --r-legend:#D7B26C; --r-surprise:#CF98BA;
+  --scene-dim:.84; color-scheme:dark }
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+.app{max-width:480px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 32px;display:flex;flex-direction:column;gap:14px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand h1{font-family:var(--f-display);font-weight:700;font-size:26px;margin:0;letter-spacing:.08em}
+.brand span{font-size:12px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.ghost{background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-size:14px;color:var(--fg)}
+.ghost b{font-variant-numeric:tabular-nums;font-weight:600;color:var(--accent);margin-left:4px}
+
+/* stage */
+.stage{position:relative;aspect-ratio:4/3.1;max-width:100%;border-radius:20px;overflow:hidden;background:var(--line)}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%;filter:brightness(var(--scene-dim))}
+.boat{position:absolute;left:24%;bottom:13%;width:50%;overflow:visible;filter:brightness(var(--scene-dim))}
+.tag{position:absolute;left:12px;top:10px;right:12px;display:flex;justify-content:space-between;gap:8px;color:#2A3633;font-size:12px;letter-spacing:.06em;pointer-events:none}
+.tag .nm{font-family:var(--f-display);font-size:17px;letter-spacing:.1em}
+.tag .co{font-variant-numeric:tabular-nums;opacity:.75;align-self:flex-start;padding-top:3px}
+.bob{animation:bob 4.2s ease-in-out infinite;transform-origin:105px 100px}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(3px) rotate(1.2deg)}}
+.cat{transform-box:fill-box;transform-origin:50% 100%}
+.alarm,.splash ellipse,.dart{opacity:0}
+.stage.scared{animation:shake .5s ease-in-out}
+.stage.scared .cat{animation:jump .8s cubic-bezier(.3,1.6,.5,1)}
+.stage.scared .alarm{animation:pop 1.6s ease-out}
+.stage.scared .splash ellipse{animation:ring 1.2s ease-out}
+.stage.scared .splash ellipse:nth-child(2){animation-delay:.18s}
+.stage.scared .dart{animation:dart 1.3s ease-in .1s}
+.bobber{transform-box:fill-box;transform-origin:center}
+.stage.bite .bobber{animation:bite 1s ease-in-out infinite}
+.stage.reeling .cat{animation:hop .45s ease-in-out 2}
+.stage.reeling .rod{animation:pull .9s ease-in-out}
+.rod{transform-origin:118px 72px}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+@keyframes jump{0%{transform:translateY(0)}30%{transform:translateY(-22px) scaleY(1.08)}60%{transform:translateY(0) scaleY(.92)}100%{transform:none}}
+@keyframes pop{0%{opacity:0;transform:translateY(6px)}12%{opacity:1;transform:translateY(-4px)}70%{opacity:1}100%{opacity:0}}
+@keyframes ring{0%{opacity:.9;transform:scale(.2)}100%{opacity:0;transform:scale(1.8)}}
+.splash ellipse{transform-box:fill-box;transform-origin:center}
+@keyframes dart{0%{opacity:.6;transform:translateX(0)}100%{opacity:0;transform:translateX(60px)}}
+@keyframes bite{0%,100%{transform:translateY(0)}30%{transform:translateY(6px)}55%{transform:translateY(-1px)}75%{transform:translateY(4px)}}
+@keyframes hop{50%{transform:translateY(-8px)}}
+@keyframes pull{40%{transform:rotate(-14deg)}100%{transform:none}}
+
+/* panel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px 18px 20px;display:flex;flex-direction:column;gap:16px}
+.label{font-size:12px;letter-spacing:.14em;color:var(--muted)}
+.group{display:flex;flex-direction:column;gap:8px}
+.spots{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;margin-inline:-4px;padding-inline:4px}
+.spots::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--bg);border-radius:14px;padding:8px 12px;text-align:left;display:flex;flex-direction:column;gap:0;min-width:92px}
+.chip .a{font-family:var(--f-display);font-size:16px}
+.chip .b{font-size:11px;color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--surface);box-shadow:inset 0 0 0 1px var(--accent)}
+.durs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.dur{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 0;display:flex;flex-direction:column;align-items:center;font-variant-numeric:tabular-nums}
+.dur .n{font-size:18px;font-weight:600;line-height:1.2}
+.dur .u{font-size:11px;color:var(--muted)}
+.dur[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);background:var(--surface)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:16px;padding:14px;font-size:17px;font-family:var(--f-display);letter-spacing:.2em;font-weight:700}
+.primary:active{transform:translateY(1px)}
+.rules{font-size:13px;color:var(--muted);margin:0;display:flex;flex-direction:column;gap:4px;padding:0;list-style:none}
+.rules li{display:flex;gap:8px}
+.rules li::before{content:"";flex:none;width:5px;height:5px;border-radius:50%;background:var(--muted);margin-top:.6em;opacity:.6}
+.toggle{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);border-radius:8px}
+.toggle input{width:18px;height:18px;accent-color:var(--accent)}
+.notice{font-size:13px;color:var(--warn);margin:0}
+.center{text-align:center;align-items:center}
+.big{font-family:var(--f-display);font-size:22px;margin:0;text-wrap:balance;line-height:1.4}
+.sub{margin:0;color:var(--muted);font-size:14px;text-wrap:balance}
+.ringwrap{position:relative;width:120px;height:120px}
+.ringwrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ringwrap .num{position:absolute;inset:0;display:grid;place-items:center;font-size:40px;font-variant-numeric:tabular-nums;font-weight:300}
+.ring-bg{stroke:var(--line)} .ring-fg{stroke:var(--accent);transition:stroke-dashoffset 1s linear}
+.timer{font-size:44px;font-variant-numeric:tabular-nums;font-weight:300;letter-spacing:.04em;line-height:1}
+.meter{display:flex;flex-direction:column;gap:6px;width:100%}
+.meter .row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:99px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--warn);width:0;transition:width .4s}
+.row2{display:flex;gap:8px;width:100%}
+.row2>*{flex:1}
+.quiet{background:transparent;border:1px solid var(--line);border-radius:14px;padding:11px;font-size:14px;color:var(--muted)}
+.quiet.armed{border-color:var(--warn);color:var(--warn)}
+
+/* reveal card */
+.catch{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;animation:rise .9s ease-out both}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.catch .art{width:180px;max-width:100%}
+.pill{font-size:12px;letter-spacing:.14em;padding:2px 12px;border-radius:999px;border:1px solid currentColor}
+.catch h2{font-family:var(--f-display);font-size:30px;margin:0;letter-spacing:.06em}
+.catch .meta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.catch .desc{margin:0;font-size:15px;max-width:34em;text-align:left}
+.bless{width:100%;border-top:1px dashed var(--line);padding-top:12px;display:flex;flex-direction:column;gap:4px}
+.bless .t{font-family:var(--f-display);font-size:18px;color:var(--deep);text-wrap:balance}
+.legendglow{filter:drop-shadow(0 0 10px rgba(240,210,140,.9))}
+
+/* dex sheet */
+.sheet{position:fixed;inset:0;z-index:30;background:var(--bg);overflow-y:auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet .app{gap:18px}
+.dexspot{display:flex;flex-direction:column;gap:8px}
+.dexspot h3{margin:0;font-family:var(--f-display);font-size:18px;font-weight:400;display:flex;justify-content:space-between;align-items:baseline}
+.dexspot h3 small{font-family:var(--f-body);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dexgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cell{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.cell svg{width:100%;max-width:64px;height:auto}
+.cell .nm{font-size:12px;line-height:1.3;text-align:center;font-family:var(--f-display);overflow-wrap:anywhere}
+.cell .x{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.cell.unk .nm{color:var(--muted)}
+.cell.unk svg{opacity:.35}
+#dexDetail{animation:none}
+
+/* simulated screen-off */
+.dark{position:fixed;inset:0;z-index:40;background:var(--night);color:var(--night-fg);display:grid;place-items:center;text-align:center;font-size:13px;letter-spacing:.1em;border:0;width:100%}
+@media (prefers-reduced-motion:reduce){
+  .bob,.stage.scared,.stage.scared .cat,.stage.bite .bobber,.stage.reeling .cat,.stage.reeling .rod,.catch{animation:none!important}
+  .stage.scared .alarm{animation:none;opacity:1}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><h1>專注獨釣</h1><span>FocusFishing</span></div>
+    <button class="ghost" id="btnDex" type="button">圖鑑<b id="dexCount">0/28</b></button>
+  </header>
+
+  <section class="stage" id="stage" aria-label="釣點風景">
+    <canvas id="scene"></canvas>
+    <svg class="boat" viewBox="0 0 220 140" aria-hidden="true">
+      <g class="bob">
+        <path class="dart" d="M150 128 q10 -6 20 0 q-10 6 -20 0 z M170 128 l7 -5 v10 z" fill="rgba(40,60,60,.45)"/>
+        <g class="splash"><ellipse cx="196" cy="118" rx="14" ry="4" fill="none" stroke="#fff" stroke-width="1.5"/><ellipse cx="196" cy="118" rx="14" ry="4" fill="none" stroke="#fff" stroke-width="1.2"/></g>
+        <g class="rod">
+          <line x1="118" y1="72" x2="178" y2="16" stroke="#6B4F38" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M178 16 Q190 60 196 116" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="1"/>
+        </g>
+        <g class="bobber"><circle cx="196" cy="116" r="3.6" fill="#D2533F"/><rect x="194.6" y="109" width="2.8" height="5" fill="#F4EEE4"/></g>
+        <g class="cat">
+          <path d="M72 88 Q52 84 58 66 Q61 60 65 64 Q62 76 78 82 Z" fill="#D9A56B"/>
+          <ellipse cx="92" cy="80" rx="22" ry="18" fill="#F2E4CD"/>
+          <path d="M76 70 Q90 62 104 68 Q98 74 80 76 Z" fill="#D9A56B"/>
+          <circle cx="112" cy="61" r="14" fill="#F2E4CD"/>
+          <polygon points="101,53 104,38 112,49" fill="#F2E4CD"/>
+          <polygon points="114,48 122,37 124,54" fill="#D9A56B"/>
+          <path d="M106 52 Q112 47 118 50" stroke="#D9A56B" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M114 62 q2.5 2 5 0" stroke="#3B3430" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+          <ellipse cx="121" cy="66" rx="1.6" ry="1.2" fill="#C98378"/>
+          <ellipse cx="114" cy="78" rx="6" ry="4" fill="#F2E4CD" stroke="#E3D1B5"/>
+        </g>
+        <path d="M22 94 Q110 106 200 92 L188 110 Q110 126 34 110 Z" fill="#8A684C"/>
+        <path d="M26 98 Q110 109 196 96" stroke="#A9835F" stroke-width="2" fill="none"/>
+        <path d="M34 110 Q110 126 188 110" stroke="rgba(255,255,255,.35)" stroke-width="1.2" fill="none"/>
+        <g class="alarm"><rect x="128" y="18" width="40" height="26" rx="10" fill="#FFFDF7"/><path d="M134 42 l-4 8 l10 -6z" fill="#FFFDF7"/><text x="148" y="37" text-anchor="middle" font-size="15" font-weight="700" fill="#A9534A">喵！</text></g>
+      </g>
+    </svg>
+    <div class="tag"><span class="nm" id="tagName"></span><span class="co" id="tagCoord"></span></div>
+  </section>
+
+  <!-- home -->
+  <section class="panel" id="pHome">
+    <div class="group">
+      <span class="label">今天去哪裡釣</span>
+      <div class="spots" id="spots" role="group" aria-label="釣點"></div>
+    </div>
+    <div class="group">
+      <span class="label">專注多久</span>
+      <div class="durs" id="durs" role="group" aria-label="專注時間"></div>
+    </div>
+    <ul class="rules">
+      <li>按下出航後，10 秒內關上螢幕，小貓才會出發。</li>
+      <li>中途打開手機畫面會嚇到小貓，螢幕亮著的時間都算分心（用其他 App 也算）。累積滿 5 分鐘，魚就全部游走了。</li>
+      <li>專注越久，越有機會遇見稀有的魚和傳說生物。</li>
+    </ul>
+    <label class="toggle" for="sim"><input type="checkbox" id="sim">試玩模式（用按鈕模擬關螢幕，方便在電腦上試）</label>
+    <p class="notice" id="homeNotice" hidden></p>
+    <button class="primary" id="btnGo" type="button">出　航</button>
+  </section>
+
+  <!-- launching -->
+  <section class="panel center" id="pLaunch" hidden>
+    <div class="ringwrap"><svg viewBox="0 0 100 100"><circle class="ring-bg" cx="50" cy="50" r="44" fill="none" stroke-width="5"/><circle class="ring-fg" id="ringFg" cx="50" cy="50" r="44" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="0"/></svg><div class="num" id="launchNum">10</div></div>
+    <p class="big">小貓解開纜繩了，<br>請關上螢幕。</p>
+    <p class="sub" id="launchSub"></p>
+    <div class="row2"><button class="quiet" id="btnLaunchCancel" type="button">先不去了</button><button class="primary" id="btnSimOff1" type="button" hidden>模擬關螢幕</button></div>
+  </section>
+
+  <!-- running, screen opened -->
+  <section class="panel center" id="pRun" hidden>
+    <p class="big" id="scareLine"></p>
+    <div><div class="label">還要釣</div><div class="timer" id="remain">00:00</div></div>
+    <div class="meter">
+      <div class="row"><span>分心時間</span><span id="distTxt">0:00 / 5:00</span></div>
+      <div class="bar"><i id="distBar"></i></div>
+    </div>
+    <p class="sub">關上螢幕，小貓就能繼續安靜地釣。</p>
+    <div class="row2"><button class="quiet" id="btnGiveUp" type="button">收船回家</button><button class="primary" id="btnSimOff2" type="button" hidden>模擬關螢幕</button></div>
+  </section>
+
+  <!-- done -->
+  <section class="panel center" id="pDone" hidden>
+    <p class="big">時間到了，浮標在動！</p>
+    <p class="sub" id="doneSub"></p>
+    <button class="primary" id="btnReel" type="button">收　線</button>
+  </section>
+
+  <!-- fail -->
+  <section class="panel center" id="pFail" hidden>
+    <p class="big">魚兒們都游走了</p>
+    <p class="sub">分心時間滿 5 分鐘，小貓抱著空水桶慢慢划回岸邊。沒關係，湖還在，明天再來。</p>
+    <button class="primary" id="btnFailBack" type="button">回到岸邊</button>
+  </section>
+
+  <!-- reveal -->
+  <section class="panel" id="pReveal" hidden>
+    <div class="catch" id="catchCard"></div>
+    <div class="row2"><button class="quiet" id="btnSeeDex" type="button">看圖鑑</button><button class="primary" id="btnAgain" type="button">再出航</button></div>
+  </section>
+</div>
+
+<div class="sheet" id="dex" hidden role="dialog" aria-label="魚類圖鑑">
+  <div class="app">
+    <header class="top"><div class="brand"><h1>圖鑑</h1><span id="dexTotal"></span></div><button class="ghost" id="btnDexClose" type="button">關閉</button></header>
+    <section class="panel" id="dexDetail" hidden></section>
+    <div id="dexBody" style="display:flex;flex-direction:column;gap:18px"></div>
+  </div>
+</div>
+
+<button class="dark" id="darkScreen" type="button" hidden>螢幕已關上（試玩模擬）<br>小貓正在安靜地釣魚<br><br>輕點一下＝打開手機</button>
+
+<script>
+(function(){
+const SPOTS=[
+ {id:'sml',name:'日月潭',place:'臺灣・南投',time:'清晨薄霧',coord:'23.85°N 120.92°E',sky:['#EFE1D4','#C9D7D8'],horizon:.6,sun:{x:.74,y:.3,r:.055,c:'#F8EDDD'},mist:.5,
+  ridges:[{c:'#B3C4C1',amp:.2,f:5,seed:1.2,type:'hill'},{c:'#8FA7A3',amp:.14,f:7,seed:3.1,type:'hill'},{c:'#6E8A86',amp:.07,f:9,seed:5.4,type:'hill'}],water:['#C1D2CF','#7C9A96'],island:true},
+ {id:'arashi',name:'嵐山・桂川',place:'日本・京都',time:'秋日午後',coord:'35.01°N 135.68°E',sky:['#F3E4CF','#E7D0B6'],horizon:.6,sun:{x:.2,y:.24,r:.05,c:'#FCEFDB'},mist:.35,
+  ridges:[{c:'#C8A086',amp:.24,f:4,seed:.4,type:'hill'},{c:'#B27A62',amp:.15,f:6,seed:2.2,type:'trees'},{c:'#8E5D4C',amp:.07,f:8,seed:4.8,type:'trees'}],water:['#C6CBB7','#8D9782'],bridge:true},
+ {id:'fjord',name:'蓋朗厄爾峽灣',place:'挪威・西部',time:'陰天微光',coord:'62.10°N 7.09°E',sky:['#D2E0E7','#EEF1EE'],horizon:.62,sun:{x:.5,y:.2,r:0,c:'#fff'},mist:.4,
+  ridges:[{c:'#9EAFB6',amp:.36,f:3,seed:.8,type:'peak',snow:true},{c:'#617883',amp:.48,f:3,seed:2,type:'cliff'}],water:['#6F8D93','#3D5C64'],fall:true},
+ {id:'jokul',name:'傑古沙龍冰河湖',place:'冰島・東南',time:'粉色黃昏',coord:'64.05°N 16.18°W',sky:['#EACCD1','#B7C8DB'],horizon:.6,sun:{x:.82,y:.52,r:.045,c:'#F7DCD2'},mist:.3,
+  ridges:[{c:'#9AA8BB',amp:.17,f:5,seed:1.7,type:'peak',snow:true},{c:'#E4ECF1',amp:.05,f:9,seed:3.3,type:'hill'}],water:['#819FB3','#4A6D85'],ice:true},
+ {id:'louise',name:'露易絲湖',place:'加拿大・班夫',time:'晴朗早晨',coord:'51.42°N 116.18°W',sky:['#D3E4EE','#F2F2EA'],horizon:.62,sun:{x:.28,y:.18,r:.04,c:'#FFFCF2'},mist:.3,
+  ridges:[{c:'#9CABB4',amp:.38,f:4,seed:2.6,type:'peak',snow:true},{c:'#4D6959',amp:.08,f:10,seed:1.1,type:'trees'}],water:['#72C3BD','#2E827E']},
+ {id:'amazon',name:'亞馬遜河',place:'巴西・瑪瑙斯',time:'金色傍晚',coord:'3.12°S 60.02°W',sky:['#F3DAA8','#E8B98D'],horizon:.62,sun:{x:.62,y:.44,r:.065,c:'#FCE8C2'},mist:.3,
+  ridges:[{c:'#8E9C70',amp:.07,f:12,seed:.9,type:'trees'},{c:'#55673F',amp:.1,f:9,seed:2.9,type:'trees'}],water:['#B89F76','#7D684B']}
+];
+const RAR={common:{t:'常見',v:'--r-common'},uncommon:{t:'少見',v:'--r-uncommon'},rare:{t:'稀有',v:'--r-rare'},legend:{t:'傳說',v:'--r-legend'},surprise:{t:'小驚喜',v:'--r-surprise'}};
+const F=(id,spot,r,name,shape,c,c2,desc,bless)=>({id,spot,r,name,shape,c,c2,desc,bless});
+const ITEMS=[
+ F('sml1','sml','common','奇力魚','fish','#C9D3D6','#EEF2F2','小小一隻，總是成群結隊，像潭水裡會游動的銀色標點符號。','願你身邊，總有一群陪你一起游的人。'),
+ F('sml2','sml','uncommon','曲腰魚','fish','#B7B9A6','#E4E2D2','背微微彎著，看起來一直在鞠躬說謝謝。被釣起來也很有禮貌。','願你的客氣，都換來溫柔的回應。'),
+ F('sml3','sml','rare','拉魯島晨光鯉','fish','#E7B580','#F8E6C9','只在第一道陽光碰到湖心那座小島時，才浮上來曬太陽。','願你的早晨，不慌不忙。'),
+ F('sml4','sml','legend','白鹿的倒影','deer','#F4F1EA','#D8D2C4','傳說邵族祖先追著一頭白鹿，找到了這座湖。牠沒有上鉤，只是安靜站在水面上，看了小貓一眼。','願你一路追著的東西，最後帶你到好地方。'),
+ F('ara1','arashi','common','香魚','fish','#AFB7A0','#F0E9C8','聞起來真的有一點點西瓜味。小貓偷偷聞了三次。','願你的日子，有淡淡的甜。'),
+ F('ara2','arashi','uncommon','楓葉金魚','fish','#D0643F','#F2B38B','尾巴紅得像剛落下的楓葉，常常被誤認成一片葉子漂走。','願你在人群裡，也被好好認出來。'),
+ F('ara3','arashi','rare','竹林鯰','fish','#6E7A56','#C8C9A4','鬍鬚長長的，聽得見竹林沙沙響，所以總是很淡定。','願風再大，你心裡都有一片安靜的竹林。'),
+ F('ara4','arashi','legend','渡月橋月影鯉','fish','#F3EBD6','#C9B98C','只有橋上的月亮和水裡的月亮對齊時才會出現，身上帶著淡淡的光。','願你等的那一刻，剛好到來。'),
+ F('fjo1','fjord','common','大西洋鱈','fish','#9A8F78','#E2DCCB','胖胖的，表情永遠像剛睡醒，而且一點也不想道歉。','願你也能理直氣壯地睡飽。'),
+ F('fjo2','fjord','uncommon','七姊妹瀑布鱒','fish','#8FA6AE','#E3ECEC','在峽灣的七姊妹瀑布底下長大，鱗片上有細細的水花紋。','願你被生活沖刷，仍然閃閃發亮。'),
+ F('fjo3','fjord','rare','極光鮭','fish','#7DB59A','#D9EFD9','冬天看過極光的鮭魚，身上留下了一點點綠。','願你看過的美景，都悄悄留在身上。'),
+ F('fjo4','fjord','legend','小海怪克拉肯','squid','#B98DB0','#E6CFE0','只有茶杯那麼大。牠用一隻觸手跟小貓握了握手，然後游回深處。','願那些看起來很可怕的事，靠近一看都小小的。'),
+ F('jok1','jokul','common','北極紅點鮭','fish','#8A9AA4','#E9A47A','在冰水裡也不發抖，肚子是暖暖的橘色。','願你冷的時候，心裡有一盞小燈。'),
+ F('jok2','jokul','uncommon','毛鱗魚','fish','#C3D4DC','#F1F6F8','小小透透的，像一片會游泳的冰。','願你輕盈，不被重量困住。'),
+ F('jok3','jokul','rare','千年冰泡魚','fish','#A9C8E0','#EAF3FA','住在千年冰塊融化時吐出的泡泡裡，說話很慢很慢。','願你慢慢來，也不會遲到。'),
+ F('jok4','jokul','legend','守夜的冰山鯨','whale','#7E9DB8','#DDE8F0','只露出一片背，像一座會呼吸的小冰山。小貓靠在牠身邊休息了一下。','願你身後，總有安靜又可靠的靠山。'),
+ F('lou1','louise','common','湖鱒','fish','#8B9A7C','#E0E4CE','很有禮貌，上鉤前會先輕輕碰兩下浮標。','願別人對你，也這麼溫柔地敲門。'),
+ F('lou2','louise','uncommon','翡翠銀魚','fish','#5FB7AE','#D8F1EC','湖水的綠來自冰河磨出的細粉，牠在裡面游久了，也變成綠的。','願你待過的地方，都把你染得更好看。'),
+ F('lou3','louise','rare','楓糖鯰','fish','#B98A4E','#F1D9A8','名字很甜，個性也很甜，被釣起來還會對你笑。','願你今天，被好好對待。'),
+ F('lou4','louise','legend','雪山回聲魚','fish','#E8EEF2','#9FC6D6','你對湖面說的話，牠會在十秒後，輕輕還給你。','願你說出口的善意，都有回音。'),
+ F('ama1','amazon','common','紅腹食人魚','fish','#8B8F93','#D96A52','牙齒很多，膽子很小。今天只想啃一片葉子。','願那些看起來很兇的煩惱，其實都很膽小。'),
+ F('ama2','amazon','uncommon','七彩神仙魚','disc','#3FA3A6','#E9A55B','圓圓扁扁，像一張彩色唱片，游起來安安靜靜。','願你的生活，有好聽的背景音樂。'),
+ F('ama3','amazon','rare','巨骨舌魚','fish','#6F6A52','#C2563F','世界上最大的淡水魚之一，要浮上水面換氣，所以很懂得先喘一口氣。','願你累的時候，記得浮上來呼吸。'),
+ F('ama4','amazon','legend','粉紅河豚','whale','#E7A7B3','#F7DCE1','牠不是魚，是亞馬遜的粉紅河豚。牠繞著小船轉了一圈，好像在說辛苦了。小貓揮揮手，沒有帶走牠。','願你遇見的美好，不必擁有也能記得。'),
+ F('sur1','*','surprise','漂流瓶','bottle','#9CC7C0','#F3EAD3','瓶子裡的紙條寫著：「今天的你也很努力。」不知道是誰寫的。','願你常常收到遠方的好消息。'),
+ F('sur2','*','surprise','一隻舊拖鞋','slipper','#C98A6C','#F0D6C4','小貓研究了很久，決定拿它當今晚的床。','願你把意外，都過成小確幸。'),
+ F('sur3','*','surprise','心形的葉子','leaf','#8DAF6A','#D9E7C2','從上游漂來的，形狀剛剛好是一顆心。','願你被喜歡，剛剛好。'),
+ F('sur4','*','surprise','水面的星星','star','#E8CF8A','#FFF6DA','撈起來只是一捧水，但小貓說，牠剛剛真的看到一顆星星。','願你在平凡的日子裡，也看得見光。')
+];
+const DURS=[{m:1,l:'試玩'},{m:10,l:'分鐘'},{m:25,l:'分鐘'},{m:45,l:'分鐘'},{m:60,l:'分鐘'}];
+const LIMIT=5*60*1000, LAUNCH=10;
+const MSG_WAIT='小貓在岸邊等了 10 秒，螢幕還亮著，這次先不出航。';
+const SCARES=['嚇！小貓手一抖，浮標晃了一下。','喵？！有人偷看！','水花濺起來，魚躲進水草裡了。','小貓回頭瞪了你一眼。'];
+
+const $=id=>document.getElementById(id);
+const CAP=window.Capacitor, NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform());
+const FG=NATIVE?CAP.Plugins.FocusGuard:null, APP=NATIVE?CAP.Plugins.App:null;
+let pollT=null;
+const store={get(k,d){try{const v=localStorage.getItem('ff.'+k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{v==null?localStorage.removeItem('ff.'+k):localStorage.setItem('ff.'+k,JSON.stringify(v))}catch(e){}}};
+let pref=store.get('pref',{spot:0,dur:2,sim:false});
+let dex=store.get('dex',{});
+let S=store.get('session',null);
+let simHidden=false, tickT=null, launchT=null;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- scene ---------- */
+const cv=$('scene'), cx=cv.getContext('2d'); let W=0,H=0,spot=SPOTS[pref.spot]||SPOTS[0];
+function size(){const r=cv.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0);draw(performance.now())}
+const nz=(u,f,s)=>(Math.sin(u*f+s)+.6*Math.sin(u*f*2.3+s*1.7)+.3*Math.sin(u*f*5.1+s*.3))/1.9;
+function ridgeY(L,u,hz){
+  const n=.5+.5*nz(u,L.f,L.seed); let h;
+  if(L.type==='peak') h=.35*n+.65*Math.pow(1-Math.abs(Math.sin(u*L.f*1.6+L.seed)),2.2);
+  else if(L.type==='cliff'){const e=Math.max(0,1-Math.min(u,1-u)*3.4);h=.08+.85*Math.pow(e,1.4)+.07*n}
+  else if(L.type==='trees') h=.55+.35*n+.1*Math.abs(Math.sin(u*120+L.seed));
+  else h=.4+.6*n;
+  return H*(hz-L.amp*h);
+}
+function draw(t){
+  if(!W) return; const s=spot, hz=s.horizon;
+  let g=cx.createLinearGradient(0,0,0,H*hz); g.addColorStop(0,s.sky[0]); g.addColorStop(1,s.sky[1]);
+  cx.fillStyle=g; cx.fillRect(0,0,W,H*hz+2);
+  if(s.sun.r){cx.fillStyle=s.sun.c;cx.globalAlpha=.9;cx.beginPath();cx.arc(W*s.sun.x,H*s.sun.y,W*s.sun.r,0,7);cx.fill();cx.globalAlpha=.25;cx.beginPath();cx.arc(W*s.sun.x,H*s.sun.y,W*s.sun.r*2.2,0,7);cx.fill();cx.globalAlpha=1}
+  s.ridges.forEach((L,i)=>{
+    const p=new Path2D(); p.moveTo(0,H*hz+2);
+    for(let x=0;x<=W+4;x+=3) p.lineTo(x,ridgeY(L,x/W,hz)); p.lineTo(W,H*hz+2); p.closePath();
+    cx.fillStyle=L.c; cx.fill(p);
+    if(L.snow){cx.save();cx.clip(p);cx.fillStyle='rgba(250,252,253,.92)';cx.fillRect(0,0,W,H*(hz-L.amp*.66));cx.restore()}
+    if(s.fall&&i===s.ridges.length-1){cx.strokeStyle='rgba(255,255,255,.7)';cx.lineWidth=1.6;const x=W*.12;cx.beginPath();cx.moveTo(x,ridgeY(L,.12,hz)+6);cx.lineTo(x+2,H*hz);cx.stroke();cx.beginPath();cx.moveTo(x+6,ridgeY(L,.125,hz)+14);cx.lineTo(x+7,H*hz);cx.stroke()}
+    if(i<s.ridges.length-1){cx.fillStyle=s.sky[1];cx.globalAlpha=s.mist*.45;cx.fillRect(0,0,W,H*hz+2);cx.globalAlpha=1}
+  });
+  g=cx.createLinearGradient(0,H*hz,0,H); g.addColorStop(0,s.water[0]); g.addColorStop(1,s.water[1]);
+  cx.fillStyle=g; cx.fillRect(0,H*hz,W,H*(1-hz));
+  if(s.island){const x=W*.3,y=H*(hz+.035);cx.fillStyle='#5F7B77';cx.beginPath();cx.ellipse(x,y,W*.06,H*.012,0,0,7);cx.fill();for(let k=-2;k<=2;k++){cx.beginPath();cx.moveTo(x+k*W*.016-5,y);cx.lineTo(x+k*W*.016,y-H*(.03+.01*(k%2?0:1)));cx.lineTo(x+k*W*.016+5,y);cx.fill()}}
+  if(s.bridge){const y=H*(hz+.03);cx.fillStyle='#6E574A';cx.fillRect(W*.04,y,W*.62,3);for(let x=W*.06;x<W*.66;x+=W*.055)cx.fillRect(x,y,2,H*.025)}
+  if(s.ice){[[.12,.68,.07],[.33,.73,.045],[.55,.66,.03],[.8,.76,.06],[.95,.69,.035]].forEach(([u,v,r])=>{const x=W*u,y=H*v,w=W*r;cx.fillStyle='#EEF5F8';cx.beginPath();cx.moveTo(x-w,y);cx.lineTo(x-w*.6,y-w*.55);cx.lineTo(x-w*.1,y-w*.4);cx.lineTo(x+w*.3,y-w*.75);cx.lineTo(x+w,y);cx.closePath();cx.fill();cx.fillStyle='rgba(150,195,220,.5)';cx.beginPath();cx.moveTo(x+w*.3,y-w*.75);cx.lineTo(x+w,y);cx.lineTo(x+w*.1,y);cx.closePath();cx.fill()})}
+  if(s.sun.r){cx.strokeStyle=s.sun.c;for(let k=0;k<9;k++){const y=H*hz+6+k*H*.035,w=W*s.sun.r*(1.6-k*.12)*(1+.15*Math.sin(t/900+k));cx.globalAlpha=.5-k*.045;cx.lineWidth=2;cx.beginPath();cx.moveTo(W*s.sun.x-w/2,y);cx.lineTo(W*s.sun.x+w/2,y);cx.stroke()}cx.globalAlpha=1}
+  cx.strokeStyle='rgba(255,255,255,.28)';cx.lineWidth=1.2;
+  for(let i=0;i<26;i++){const q=i/26,y=H*hz+Math.pow(q,1.5)*H*(1-hz)+4,len=10+q*34,sp=.006*(1+q);const x=((i*137.5+t*sp)%(W+80))-40;cx.beginPath();cx.moveTo(x,y);cx.lineTo(x+len,y);cx.stroke()}
+}
+function loop(t){draw(t);if(!reduce&&!document.hidden)requestAnimationFrame(loop)}
+new ResizeObserver(size).observe(cv);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!reduce)requestAnimationFrame(loop)});
+
+/* ---------- art ---------- */
+function art(it,known=true){
+  const c=known?it.c:'#9AA5A1', c2=known?it.c2:'#B9C2BE', eye=known?'#2B2A28':'transparent';
+  let b='';
+  switch(it.shape){
+   case 'fish':b=`<path d="M92 35 L116 16 Q110 35 116 54 Z" fill="${c}"/><ellipse cx="56" cy="35" rx="40" ry="19" fill="${c}"/><path d="M22 40 Q56 56 92 38 Q60 50 22 40Z" fill="${c2}"/><path d="M44 17 Q60 4 74 18" fill="${c}"/><circle cx="31" cy="30" r="3" fill="${eye}"/>`;break;
+   case 'disc':b=`<path d="M88 35 L112 20 Q106 35 112 50 Z" fill="${c}"/><circle cx="56" cy="35" r="30" fill="${c}"/><path d="M40 10 Q46 35 40 60 M56 6 Q62 35 56 64 M72 10 Q78 35 72 60" stroke="${c2}" stroke-width="5" fill="none"/><circle cx="36" cy="30" r="3" fill="${eye}"/>`;break;
+   case 'whale':b=`<path d="M96 30 Q110 12 118 18 Q108 28 116 44 Q106 42 96 38Z" fill="${c}"/><path d="M8 38 Q10 14 50 14 Q92 16 98 36 Q90 58 50 58 Q14 58 8 38Z" fill="${c}"/><path d="M12 44 Q50 62 92 42 Q50 52 12 44Z" fill="${c2}"/><circle cx="28" cy="32" r="3" fill="${eye}"/><path d="M24 42 q6 4 12 0" stroke="${eye}" stroke-width="1.6" fill="none"/>`;break;
+   case 'squid':b=`<path d="M36 40 q-6 18 -14 22 M48 44 q-2 16 -8 24 M60 44 q2 16 8 24 M72 40 q6 18 14 22" stroke="${c}" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="54" cy="28" rx="26" ry="20" fill="${c}"/><circle cx="45" cy="28" r="3" fill="${eye}"/><circle cx="63" cy="28" r="3" fill="${eye}"/><circle cx="54" cy="20" r="4" fill="${c2}"/>`;break;
+   case 'deer':b=`<ellipse cx="60" cy="58" rx="40" ry="5" fill="${c2}" opacity=".5"/><path d="M38 36 h40 v4 h-40z M40 40 v16 M48 40 v16 M70 40 v16 M76 40 v16" stroke="${c}" stroke-width="5" stroke-linecap="round"/><ellipse cx="58" cy="34" rx="22" ry="9" fill="${c}"/><path d="M76 30 L84 16" stroke="${c}" stroke-width="7" stroke-linecap="round"/><ellipse cx="88" cy="14" rx="8" ry="5" fill="${c}"/><path d="M84 9 l-4 -8 M84 9 l2 -9 M90 9 l2 -8 M90 9 l6 -6" stroke="${c2}" stroke-width="2" stroke-linecap="round"/><circle cx="90" cy="13" r="1.6" fill="${eye}"/>`;break;
+   case 'bottle':b=`<rect x="30" y="22" width="56" height="28" rx="12" fill="${c}" opacity=".85"/><rect x="86" y="30" width="16" height="12" rx="3" fill="${c}"/><rect x="100" y="29" width="8" height="14" rx="2" fill="#B08A60"/><rect x="42" y="30" width="30" height="12" rx="2" fill="${c2}" transform="rotate(-6 57 36)"/>`;break;
+   case 'slipper':b=`<path d="M14 44 Q14 26 40 26 L92 30 Q112 34 108 46 Q104 54 60 52 Q20 54 14 44Z" fill="${c}"/><path d="M58 28 Q78 14 96 32" fill="none" stroke="${c2}" stroke-width="9" stroke-linecap="round"/>`;break;
+   case 'leaf':b=`<path d="M60 62 C20 40 22 10 44 12 C52 12 58 18 60 24 C62 18 68 12 76 12 C98 10 100 40 60 62Z" fill="${c}"/><path d="M60 26 V60" stroke="${c2}" stroke-width="2"/><path d="M60 62 q-2 6 -8 8" stroke="${c}" stroke-width="3" fill="none"/>`;break;
+   case 'star':b=`<path d="M60 6 L68 28 L92 28 L73 42 L80 64 L60 51 L40 64 L47 42 L28 28 L52 28Z" fill="${c}"/><circle cx="60" cy="36" r="8" fill="${c2}"/>`;break;
+  }
+  return `<svg viewBox="0 0 120 70" aria-hidden="true" class="${known&&it.r==='legend'?'legendglow':''}">${b}</svg>`;
+}
+
+/* ---------- ui ---------- */
+const panels=['pHome','pLaunch','pRun','pDone','pFail','pReveal'];
+function show(id){panels.forEach(p=>$(p).hidden=p!==id);const st=$('stage');st.classList.toggle('bite',id==='pDone')}
+function setSpot(i){spot=SPOTS[i];pref.spot=i;store.set('pref',pref);$('tagName').textContent=spot.name;$('tagCoord').textContent=spot.coord;[...$('spots').children].forEach((b,k)=>b.setAttribute('aria-pressed',k===i));draw(performance.now())}
+SPOTS.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className='chip';b.innerHTML=`<span class="a">${s.name}</span><span class="b">${s.place}・${s.time}</span>`;b.onclick=()=>{if(!S)setSpot(i)};$('spots').appendChild(b)});
+DURS.forEach((d,i)=>{const b=document.createElement('button');b.type='button';b.className='dur';b.innerHTML=`<span class="n">${d.m}</span><span class="u">${d.l}</span>`;b.onclick=()=>{pref.dur=i;store.set('pref',pref);[...$('durs').children].forEach((x,k)=>x.setAttribute('aria-pressed',k===i))};$('durs').appendChild(b)});
+[...$('durs').children].forEach((x,k)=>x.setAttribute('aria-pressed',k===pref.dur));
+$('sim').checked=!!pref.sim; $('sim').onchange=e=>{pref.sim=e.target.checked;store.set('pref',pref)};
+const mmss=ms=>{ms=Math.max(0,ms);const s=Math.ceil(ms/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const mss=ms=>{const s=Math.floor(Math.max(0,ms)/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+function dexCount(){const n=Object.keys(dex).length;$('dexCount').textContent=n+'/'+ITEMS.length;return n}
+function save(){if(!S||!S.native)store.set('session',S)}
+function notice(t){const n=$('homeNotice');n.textContent=t||'';n.hidden=!t}
+
+/* ---------- session ---------- */
+const isHidden=()=>document.hidden||simHidden;
+function setSim(v){simHidden=v;$('darkScreen').hidden=!v;onVis()}
+$('darkScreen').onclick=()=>setSim(false);
+$('btnSimOff1').onclick=$('btnSimOff2').onclick=()=>setSim(true);
+document.addEventListener('visibilitychange',onVis);
+
+$('btnGo').onclick=()=>{
+  notice('');S={state:'launch',spot:pref.spot,dur:DURS[pref.dur].m,launchAt:Date.now(),distractMs:0,visSince:null,sim:!!pref.sim,native:NATIVE&&!pref.sim};save();
+  if(S.native)FG.arm({dur:S.dur,spot:S.spot,spotName:SPOTS[S.spot].name});
+  $('btnSimOff1').hidden=!S.sim; $('launchSub').textContent=`目的地：${spot.name}・專注 ${S.dur} 分鐘`;
+  show('pLaunch'); let n=LAUNCH; const ring=$('ringFg');
+  const upd=()=>{$('launchNum').textContent=n;ring.style.strokeDashoffset=276.5*(1-n/LAUNCH)};upd();
+  clearInterval(launchT); launchT=setInterval(()=>{if(!S||S.state!=='launch'){clearInterval(launchT);return}n--;upd();
+    if(n<=0){clearInterval(launchT);if(S.native){setTimeout(()=>nRefresh(false),600);return}if(!isHidden()){S=null;save();show('pHome');notice(MSG_WAIT)}}},1000);
+};
+$('btnLaunchCancel').onclick=()=>{clearInterval(launchT);if(S&&S.native)FG.stop();S=null;save();show('pHome')};
+
+function onVis(){if(!S||S.native)return; isHidden()?onHide():onShow(false)}
+function onHide(){
+  const now=Date.now();
+  if(S.state==='launch'){clearInterval(launchT);S.state='run';S.startAt=now;S.visSince=null;save();return}
+  if(S.state==='run'&&S.visSince){S.distractMs+=now-S.visSince;S.visSince=null;save()}
+  clearInterval(tickT);
+}
+function onShow(fromLoad){
+  if(S.state==='launch'){if(fromLoad){S=null;save();show('pHome')}return}
+  if(S.state==='done'){finishUI();return}
+  if(S.state!=='run')return;
+  const now=Date.now();
+  if(now-S.startAt>=S.dur*60000){S.visSince=null;S.state='done';save();finishUI();return}
+  S.visSince=now;save();
+  $('btnSimOff2').hidden=!S.sim;
+  $('scareLine').textContent=SCARES[Math.floor(Math.random()*SCARES.length)];
+  show('pRun');scare();tick();clearInterval(tickT);tickT=setInterval(tick,500);
+}
+function scare(){const st=$('stage');st.classList.remove('scared');void st.offsetWidth;st.classList.add('scared');setTimeout(()=>st.classList.remove('scared'),1700)}
+function tick(){
+  if(!S||S.state!=='run'||(!S.native&&isHidden())){clearInterval(tickT);return}
+  const now=Date.now(), d=S.native?S.distractMs+(S.onSince?now-S.onSince:0):S.distractMs+(now-(S.visSince||now)), left=S.dur*60000-(now-S.startAt);
+  if(S.native){$('remain').textContent=mmss(left);$('distTxt').textContent=mss(Math.min(d,LIMIT))+' / 5:00';$('distBar').style.width=Math.min(100,d/LIMIT*100)+'%';return}
+  $('remain').textContent=mmss(left);$('distTxt').textContent=mss(d)+' / 5:00';$('distBar').style.width=Math.min(100,d/LIMIT*100)+'%';
+  if(d>=LIMIT){clearInterval(tickT);S=null;save();show('pFail');return}
+  if(left<=0){clearInterval(tickT);S.distractMs=d;S.visSince=null;S.state='done';save();finishUI()}
+}
+function finishUI(){$('doneSub').textContent=`在${SPOTS[S.spot].name}專注了 ${S.dur} 分鐘，分心 ${mss(S.distractMs)}。`;show('pDone')}
+$('btnGiveUp').onclick=e=>{const b=e.currentTarget;if(!b.classList.contains('armed')){b.classList.add('armed');b.textContent='再按一次確定收船';setTimeout(()=>{b.classList.remove('armed');b.textContent='收船回家'},3000);return}
+  b.classList.remove('armed');b.textContent='收船回家';clearInterval(tickT);clearInterval(pollT);if(S&&S.native)FG.stop();S=null;save();show('pHome')};
+$('btnFailBack').onclick=()=>{if(NATIVE)FG.clear();show('pHome')};
+
+function pick(m,ratio){
+  const k=1-.6*ratio, w={common:Math.max(25,70-m),uncommon:25,rare:(4+m*.35)*k,legend:(m>=10?.5+m*.08:.2)*k,surprise:7};
+  let r=Math.random()*Object.values(w).reduce((a,b)=>a+b,0),tier='common';
+  for(const [t,v] of Object.entries(w)){if((r-=v)<=0){tier=t;break}}
+  const pool=ITEMS.filter(i=>i.r===tier&&(tier==='surprise'||i.spot===SPOTS[S.spot].id));
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function card(it,meta){
+  const R=RAR[it.r];
+  return `<div class="art">${art(it)}</div><span class="pill" style="color:var(${R.v})">${R.t}</span><h2>${it.name}</h2>${meta?`<div class="meta">${meta}</div>`:''}<p class="desc">${it.desc}</p><div class="bless"><span class="label">給你的祝福</span><span class="t">${it.bless}</span></div>`;
+}
+$('btnReel').onclick=()=>{
+  if(!S)return; const st=$('stage'); st.classList.remove('bite'); st.classList.add('reeling'); $('btnReel').disabled=true;
+  setTimeout(()=>{
+    st.classList.remove('reeling'); $('btnReel').disabled=false;
+    const it=pick(S.dur,Math.min(1,S.distractMs/LIMIT)); const first=!dex[it.id];
+    dex[it.id]={n:(dex[it.id]?.n||0)+1,at:dex[it.id]?.at||Date.now()}; store.set('dex',dex); dexCount();
+    const meta=`${SPOTS[S.spot].name}・專注 ${S.dur} 分鐘${first?'・第一次遇見':'・第 '+dex[it.id].n+' 次'}`;
+    if(S.native)FG.clear(); S=null;save(); $('catchCard').innerHTML=card(it,meta); $('catchCard').style.animation='none';void $('catchCard').offsetWidth;$('catchCard').style.animation=''; show('pReveal');
+  },reduce?100:950);
+};
+$('btnAgain').onclick=()=>show('pHome');
+
+/* ---------- dex ---------- */
+function openDex(){
+  const n=dexCount(); $('dexTotal').textContent=`已遇見 ${n} / ${ITEMS.length}`; $('dexDetail').hidden=true;
+  const groups=[...SPOTS.map(s=>({t:s.name,sub:s.place,items:ITEMS.filter(i=>i.spot===s.id)})),{t:'小驚喜',sub:'任何釣點都可能撈到',items:ITEMS.filter(i=>i.spot==='*')}];
+  $('dexBody').innerHTML=groups.map(g=>{const got=g.items.filter(i=>dex[i.id]).length;return `<div class="dexspot"><h3>${g.t}<small>${g.sub}・${got}/${g.items.length}</small></h3><div class="dexgrid">${g.items.map(i=>{const k=!!dex[i.id];return `<button type="button" class="cell ${k?'':'unk'}" data-id="${i.id}" ${k?'':'disabled'}>${art(i,k)}<span class="nm">${k?i.name:'？？？'}</span><span class="x">${k?'×'+dex[i.id].n:RAR[i.r].t}</span></button>`}).join('')}</div></div>`}).join('');
+  $('dex').hidden=false; $('dex').scrollTop=0;
+}
+$('dexBody').onclick=e=>{const b=e.target.closest('.cell');if(!b||b.disabled)return;const it=ITEMS.find(i=>i.id===b.dataset.id);const d=$('dexDetail');d.innerHTML=`<div class="catch">${card(it,'已釣到 '+dex[it.id].n+' 次')}</div>`;d.hidden=false;$('dex').scrollTop=0};
+$('btnDex').onclick=openDex; $('btnSeeDex').onclick=openDex; $('btnDexClose').onclick=()=>$('dex').hidden=true;
+
+/* ---------- native ---------- */
+async function nRefresh(scareIt){
+  let st; try{st=await FG.status()}catch(e){return}
+  const was=S&&S.native?S.state:null;
+  if(st.state==='launch'){ if(!S){S={state:'launch',spot:st.spot,dur:st.dur,native:true};setSpot(st.spot);show('pLaunch')} return }
+  if(st.state==='cancelled'){clearInterval(launchT);FG.clear();S=null;show('pHome');notice(MSG_WAIT);return}
+  if(st.state==='run'){
+    S={state:'run',spot:st.spot,dur:st.dur,startAt:st.startAt,distractMs:st.distractMs,onSince:st.onSince,native:true};setSpot(st.spot);
+    if(scareIt||was!=='run'){$('btnSimOff2').hidden=true;$('scareLine').textContent=SCARES[Math.floor(Math.random()*SCARES.length)];show('pRun');scare()}
+    tick();clearInterval(tickT);tickT=setInterval(tick,500);
+    clearInterval(pollT);pollT=setInterval(()=>nRefresh(false),2000);return}
+  clearInterval(tickT);clearInterval(pollT);
+  if(st.state==='done'){S={state:'done',spot:st.spot,dur:st.dur,distractMs:st.distractMs,native:true};setSpot(st.spot);finishUI();return}
+  if(st.state==='fail'){S=null;show('pFail');return}
+  if(S&&S.native&&S.state!=='done'){S=null;show('pHome')}
+}
+if(NATIVE){
+  APP.addListener('appStateChange',({isActive})=>{if(isActive)nRefresh(true);else{clearInterval(tickT);clearInterval(pollT)}});
+  try{FG.askPermission()}catch(e){}
+}
+
+/* ---------- boot ---------- */
+function bootWeb(){
+  setSpot(S?S.spot:(pref.spot||0));
+  if(S){ if(S.state==='run'){S.visSince=null;} if(!isHidden())onShow(true); } else show('pHome');
+}
+dexCount();
+if(NATIVE){ if(S&&!S.sim)S=null; FG.status().then(st=>{ if(st.state!=='idle'){setSpot(st.spot);show('pHome');nRefresh(true)} else bootWeb() }).catch(bootWeb) } else bootWeb();
+if(!reduce)requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
